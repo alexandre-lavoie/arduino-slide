@@ -18,4 +18,4 @@ Uses the arduino ultrasonic sensor to produce sounds on an attached speaker. Oth
 # Reference Works
 
 1. www.HowToMechatronics.com - Dejan Nedelkovski
-2. http://blog.afkham.org/2013/02/how-to-build-arduino-audible-distance.html
+2. http://blog.afkham.org/2013/02/how-to-build-arduino-audible-distance.html - Afkham Azeez
