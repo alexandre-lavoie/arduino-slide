@@ -8,6 +8,8 @@ Uses the arduino ultrasonic sensor to produce sounds on an attached speaker. Oth
 * An Ultrasonic Sensor (Model HC-SR04).
 * A Speaker, Headphone Jack, or Piezobuzzer.
 
+> Note that the ultrasonic sensor that was used has a trigger (pin 12 on arduino) and echo (pin 11 on arduino) pin. 
+
 ![alt text](https://lh5.googleusercontent.com/78cazCDDPSLBZcRadOttPIXT2DkS2Wt4Tlr_RkG1Wwnfh8dw4u50WcXEuMCNIMo2JjPqcvW7xZXevpDqi0jN=w1680-h984-rw)
 
 # Current Implementations
