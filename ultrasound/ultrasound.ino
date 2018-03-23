@@ -32,12 +32,13 @@
 const int triggerPin = 12; // triggerPin used to send a signal to the ultrasonic sensor.
 const int listenPin = 11; // listenPin used to receive the signal.
 const int soundPin = 10; // soundPin used to send pulse to speaker.
+const int switchPin = 9; // switchPin used to receive switch state. (0V = down and 5V = up).
 
 // Defines variables.
 long duration; // Used to store time taken for pulse to go to the object and come back.
 int distance; // Distance to the object in centimeters.
 const int notes[12] = {NOTE_C4,NOTE_C4S,NOTE_D4,NOTE_D4S,NOTE_E4,NOTE_F4,NOTE_F4S,NOTE_G4,NOTE_G4S,NOTE_A4,NOTE_A4S,NOTE_B4}; // All notes in the C major scale.
-const int fretLength = 4; // Length for a fret in centimeters.
+const int fretLength = 5; // Length for a fret in centimeters.
 
 /**
  * Function that runs once when the arduino starts.
@@ -46,7 +47,8 @@ const int fretLength = 4; // Length for a fret in centimeters.
 void setup() {
   pinMode(triggerPin, OUTPUT); // Sets the triggerPin such that it can output information.
   pinMode(listenPin, INPUT); // Sets the listenPin such that it can get information.
-  pinMode(soundPin, OUTPUT); // Set the soundPin such that it can output its frequencies.
+  pinMode(soundPin, OUTPUT); // Sets the soundPin such that it can output its frequencies.
+  pinMode(switchPin, INPUT); // Sets the switchPin such that it can get information.
   Serial.begin(9600); // Stars the serial communication with frequency.
 }
 
@@ -60,7 +62,11 @@ void loop() {
 
   distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
 
-  PlaySound(distance,2); //Plays sound according to distance.
+  //If switch is down, then play sound.
+  
+  if(digitalRead(switchPin)==0){
+    PlaySound(distance,2); //Plays sound according to distance.
+  }
   
 }
 
