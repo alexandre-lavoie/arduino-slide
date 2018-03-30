@@ -31,25 +31,33 @@
 // Defines the pins.
 const int triggerPin = 12; // triggerPin used to send a signal to the ultrasonic sensor.
 const int listenPin = 11; // listenPin used to receive the signal.
-const int soundPin = 10; // soundPin used to send pulse to speaker.
 const int switchPin = 9; // switchPin used to receive switch state. (0V = down and 5V = up).
 
 // Defines variables.
+
+const int notes[12] = {NOTE_B4,NOTE_A4S,NOTE_A4,NOTE_G4S,NOTE_G4,NOTE_F4S,NOTE_F4,NOTE_E4,NOTE_D4S,NOTE_D4,NOTE_C4S,NOTE_C4}; // All notes in the C major scale.
+const int fretLength = 4; // Length for a fret in centimeters.
+const int sampleSize = 64; // Size of the sample for DAC.
+int samples[sampleSize]; // Defines array for samples.
 long duration; // Used to store time taken for pulse to go to the object and come back.
 int distance; // Distance to the object in centimeters.
-const int notes[12] = {NOTE_C4,NOTE_C4S,NOTE_D4,NOTE_D4S,NOTE_E4,NOTE_F4,NOTE_F4S,NOTE_G4,NOTE_G4S,NOTE_A4,NOTE_A4S,NOTE_B4}; // All notes in the C major scale.
-const int fretLength = 5; // Length for a fret in centimeters.
 
 /**
  * Function that runs once when the arduino starts.
  */
 
 void setup() {
+  DDRC = B11111111;
+  GetSamples();
   pinMode(triggerPin, OUTPUT); // Sets the triggerPin such that it can output information.
   pinMode(listenPin, INPUT); // Sets the listenPin such that it can get information.
-  pinMode(soundPin, OUTPUT); // Sets the soundPin such that it can output its frequencies.
   pinMode(switchPin, INPUT); // Sets the switchPin such that it can get information.
   Serial.begin(9600); // Stars the serial communication with frequency.
+
+    
+  duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
+
+  distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
 }
 
 /**
@@ -57,17 +65,24 @@ void setup() {
  */
 
 void loop() {
-  
-  duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
-
-  distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
 
   //If switch is down, then play sound.
   
   if(digitalRead(switchPin)==0){
-    PlaySound(distance,2); //Plays sound according to distance.
+    Serial.println(distance);
+    PlaySound(); //Plays sound according to distance.
   }
   
+}
+
+/**
+ * Gets points on a sin curve to use for the DAC.
+ */
+
+void GetSamples(){
+  for(int i=0;i<sampleSize;i++){
+    samples[i]=(int)127*sin(2*PI*i/sampleSize)+128;
+  }
 }
 
 /**
@@ -77,14 +92,18 @@ void loop() {
  */
 
 long GetTimeObjectAndBack(){
+
+  while(digitalRead(listenPin)==1){
+    
+  }
   
   //Clears the trigger pin.
   digitalWrite(triggerPin,LOW);
-  delayMicroseconds(2);
+  delayMicroseconds(4);
 
   //Sends a pulse for 10 microseconds to the ultrasonic sensor. This is required by the sensor to send it's 8 pulses.
   digitalWrite(triggerPin,HIGH);
-  delayMicroseconds(10);
+  delayMicroseconds(12);
   digitalWrite(triggerPin,LOW);
 
   //Waits till it receives a HIGH on the listenPin and gives the time it takes.
@@ -117,14 +136,14 @@ int GetDistanceToObject(long timeTaken){
  * 
  */
 
-void PlaySound(int distanceTo, int noteDuration){
+void PlaySound(){
 
   int Note = 0; // The note id for the notes array.
 
   //Tests distance length to see which note is associated to the distance when it falls within a fret length. If it too small or too large of a distance, it will be ignored.
 
   for(int i=0; i < 12; i++){
-    if(fretLength*i<distanceTo&&fretLength*(i+1)>distanceTo){
+    if(fretLength*i<distance&&fretLength*(i+1)>distance){
         Note = i;
         break;
       }
@@ -133,11 +152,27 @@ void PlaySound(int distanceTo, int noteDuration){
   //If there is a note to be played, it plays the note.
   
   if(Note!=0){
-    tone(soundPin, notes[Note], 1000/noteDuration);
+    float AdjustValue = 15;
+    int CurrentSample = 0;
+    float Frequency = notes[Note];
+    int SamplePerSeconds = (int)(sampleSize*Frequency);
+    float fSampleSize = sampleSize;
+    int Delay = (int)1.0/fSampleSize*1.0/Frequency*1000000.0-AdjustValue;
     
-    delay(1000/noteDuration * 1.3);
-
-    noTone(soundPin);
+    while(CurrentSample<SamplePerSeconds){
+      PORTC = samples[CurrentSample%sampleSize];
+      delayMicroseconds(Delay);
+      CurrentSample++;
+    } 
+    
+    delayMicroseconds(100);
+    
+  }else{
+    delayMicroseconds(100);    
   }
+
   
+  duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
+
+  distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
 }
