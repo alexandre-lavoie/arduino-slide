@@ -37,7 +37,7 @@ const int switchPin = 9; // switchPin used to receive switch state. (0V = down a
 
 const int notes[12] = {NOTE_B4,NOTE_A4S,NOTE_A4,NOTE_G4S,NOTE_G4,NOTE_F4S,NOTE_F4,NOTE_E4,NOTE_D4S,NOTE_D4,NOTE_C4S,NOTE_C4}; // All notes in the C major scale.
 const int fretLength = 4; // Length for a fret in centimeters.
-const int sampleSize = 64; // Size of the sample for DAC.
+const int sampleSize = 64; // Size of the sample for Digital-to-Analog Converter.
 int samples[sampleSize]; // Defines array for samples.
 long duration; // Used to store time taken for pulse to go to the object and come back.
 int distance; // Distance to the object in centimeters.
@@ -47,17 +47,20 @@ int distance; // Distance to the object in centimeters.
  */
 
 void setup() {
-  DDRC = B11111111;
-  GetSamples();
+  
+  DDRC = B11111111; // Sets Port C in output mode.
+  
   pinMode(triggerPin, OUTPUT); // Sets the triggerPin such that it can output information.
   pinMode(listenPin, INPUT); // Sets the listenPin such that it can get information.
   pinMode(switchPin, INPUT); // Sets the switchPin such that it can get information.
   Serial.begin(9600); // Stars the serial communication with frequency.
 
-    
+  GetSamples(); // Gets the samples for the Digital-to-Analog Converter.
+
   duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
 
   distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
+  
 }
 
 /**
@@ -69,20 +72,31 @@ void loop() {
   //If switch is down, then play sound.
   
   if(digitalRead(switchPin)==0){
-    Serial.println(distance);
     PlaySound(); //Plays sound according to distance.
   }
   
 }
 
 /**
- * Gets points on a sin curve to use for the DAC.
+ * Gets points of a function for the Digital-to-Analog Converter.
  */
 
 void GetSamples(){
+  
   for(int i=0;i<sampleSize;i++){
-    samples[i]=(int)127*sin(2*PI*i/sampleSize)+128;
+    samples[i]=SinFunction((double)i/sampleSize);
   }
+  
+}
+
+/**
+ * Function used to get points on a sin curve.
+ */
+
+int SinFunction(double x){
+  
+  return (int)127*sin(2.0*PI*x)+128;
+  
 }
 
 /**
@@ -93,9 +107,8 @@ void GetSamples(){
 
 long GetTimeObjectAndBack(){
 
-  while(digitalRead(listenPin)==1){
-    
-  }
+  //Assures that the ardunio is not receiving a pulse before sending a pulse.
+  while(digitalRead(listenPin)==1){}
   
   //Clears the trigger pin.
   digitalWrite(triggerPin,LOW);
@@ -152,26 +165,27 @@ void PlaySound(){
   //If there is a note to be played, it plays the note.
   
   if(Note!=0){
+    
     float AdjustValue = 15;
     int CurrentSample = 0;
     float Frequency = notes[Note];
-    int SamplePerSeconds = (int)(sampleSize*Frequency);
-    float fSampleSize = sampleSize;
-    int Delay = (int)1.0/fSampleSize*1.0/Frequency*1000000.0-AdjustValue;
-    
-    while(CurrentSample<SamplePerSeconds){
+    int SamplesPerSeconds = (int)(sampleSize*Frequency);
+    int Delay = (int)(1.0/((float)sampleSize*Frequency)*1000000.0-AdjustValue);
+
+    while(CurrentSample<SamplesPerSeconds){
       PORTC = samples[CurrentSample%sampleSize];
       delayMicroseconds(Delay);
       CurrentSample++;
     } 
-    
+
     delayMicroseconds(100);
     
   }else{
+    
     delayMicroseconds(100);    
+    
   }
 
-  
   duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
 
   distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
