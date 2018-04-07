@@ -11,7 +11,7 @@ Uses the arduino ultrasonic sensor to produce frequencies from a library on a sp
 
 > Note that the ultrasonic sensor that was used has a trigger (pin 12 on arduino) and echo (pin 11 on arduino) pin. 
 
-![alt text](https://raw.githubusercontent.com/alexandre-lavoie/arduino-slide/final/images/circuit.png)
+[![alt text](https://raw.githubusercontent.com/alexandre-lavoie/arduino-slide/final/images/circuit.png)](https://www.tinkercad.com/things/jiWQna2fhDQ)
 
 # Current Implementations
 
