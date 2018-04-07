@@ -13,6 +13,9 @@
  * 
  */
 
+#include "tables.h"
+#include <avr/pgmspace.h>
+
 // Defines the note frequencies.
 
 #define NOTE_C4 262
@@ -27,6 +30,7 @@
 #define NOTE_A4 440
 #define NOTE_A4S 466
 #define NOTE_B4 494
+#define NOP __asm__ __volatile__ ("nop\n\t")
 
 // Defines the pins.
 const int triggerPin = 12; // triggerPin used to send a signal to the ultrasonic sensor.
@@ -37,8 +41,7 @@ const int switchPin = 9; // switchPin used to receive switch state. (0V = down a
 
 const int notes[12] = {NOTE_B4,NOTE_A4S,NOTE_A4,NOTE_G4S,NOTE_G4,NOTE_F4S,NOTE_F4,NOTE_E4,NOTE_D4S,NOTE_D4,NOTE_C4S,NOTE_C4}; // All notes in the C major scale.
 const int fretLength = 4; // Length for a fret in centimeters.
-const int sampleSize = 64; // Size of the sample for Digital-to-Analog Converter.
-int samples[sampleSize]; // Defines array for samples.
+int samples[256]; // Used for samples.
 long duration; // Used to store time taken for pulse to go to the object and come back.
 int distance; // Distance to the object in centimeters.
 
@@ -55,11 +58,19 @@ void setup() {
   pinMode(switchPin, INPUT); // Sets the switchPin such that it can get information.
   Serial.begin(9600); // Stars the serial communication with frequency.
 
-  GetSamples(); // Gets the samples for the Digital-to-Analog Converter.
+  GetSamples();
 
   duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
 
   distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
+  
+}
+
+void GetSamples(){
+
+  for(int i=0;i<256;i++){
+    samples[i] = pgm_read_byte(&SinTable[i]);
+  }
   
 }
 
@@ -71,31 +82,9 @@ void loop() {
 
   //If switch is down, then play sound.
   
-  if(digitalRead(switchPin)==0){
-    PlaySound(); //Plays sound according to distance.
-  }
-  
-}
-
-/**
- * Gets points of a function for the Digital-to-Analog Converter.
- */
-
-void GetSamples(){
-  
-  for(int i=0;i<sampleSize;i++){
-    samples[i]=SinFunction((double)i/sampleSize);
-  }
-  
-}
-
-/**
- * Function used to get points on a sin curve.
- */
-
-int SinFunction(double x){
-  
-  return (int)127*sin(2.0*PI*x)+128;
+  //if(digitalRead(switchPin)==0){
+    TestSound();//PlaySound(); //Plays sound according to distance.
+  //}
   
 }
 
@@ -151,7 +140,7 @@ int GetDistanceToObject(long timeTaken){
 
 void PlaySound(){
 
-  int Note = 0; // The note id for the notes array.
+  int Note = -1; // The note id for the notes array.
 
   //Tests distance length to see which note is associated to the distance when it falls within a fret length. If it too small or too large of a distance, it will be ignored.
 
@@ -164,29 +153,38 @@ void PlaySound(){
 
   //If there is a note to be played, it plays the note.
   
-  if(Note!=0){
+  if(Note!=-1){
     
-    float AdjustValue = 15;
-    int CurrentSample = 0;
     float Frequency = notes[Note];
-    int SamplesPerSeconds = (int)(sampleSize*Frequency);
-    int Delay = (int)(1.0/((float)sampleSize*Frequency)*1000000.0-AdjustValue);
-
-    while(CurrentSample<SamplesPerSeconds){
-      PORTC = samples[CurrentSample%sampleSize];
-      delayMicroseconds(Delay);
-      CurrentSample++;
-    } 
-
-    delayMicroseconds(100);
+    int Delay = (int)((1.0/((float)256.0*Frequency)*1000000.0)+1.4);
     
-  }else{
-    
-    delayMicroseconds(100);    
-    
+    while(digitalRead(switchPin)==0){
+      int CurrentSample = 0;
+      while(CurrentSample<256){
+        PORTC = samples[CurrentSample];
+        delayMicroseconds(Delay);
+        CurrentSample++;
+      } 
+    }
   }
 
   duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
 
   distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
+}
+
+void TestSound(){
+  
+    float Frequency = notes[11];
+    Serial.println(Frequency);
+    int Delay = (int)((1.0/((float)256.0*Frequency)*1000000.0)+1.4);
+    
+    while(true){
+      int CurrentSample = 0;
+      while(CurrentSample<256){
+        PORTC = samples[CurrentSample];
+        delayMicroseconds(Delay);
+        CurrentSample++;
+      } 
+    }
 }
