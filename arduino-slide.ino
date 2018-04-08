@@ -1,5 +1,5 @@
 /**
-  
+
    Arduino Slide
 
    Created by Alexandre Lavoie, 2018.
@@ -47,10 +47,6 @@ void setup() {
   pinMode(listenPin, INPUT); // Sets the listenPin such that it can get information.
   pinMode(switchPin, INPUT); // Sets the switchPin such that it can get information.
   Serial.begin(9600); // Stars the serial communication with frequency.
-
-  duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
-
-  distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
 
 }
 
@@ -115,6 +111,10 @@ int GetDistanceToObject(long timeTaken) {
 
 void PlaySound() {
 
+  duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
+
+  distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
+
   int Note = -1; // The note id for the notes array.
 
   //Tests distance length to see which note is associated to the distance when it falls within a fret length. If it too small or too large of a distance, it will be ignored.
@@ -149,9 +149,4 @@ void PlaySound() {
       }
     }
   }
-
-  duration = GetTimeObjectAndBack(); //Gets the time it takes to get to the object and back in microseconds and sets it to the variable.
-
-  distance = GetDistanceToObject(duration); //Gets the distance to the object in centimeters.
-
 }
